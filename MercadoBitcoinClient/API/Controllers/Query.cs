@@ -34,8 +34,47 @@ namespace MercadoBitcoinClient.API.Controllers {
             Ticker ticker = new Ticker();
 
             JObject obj = JObject.Parse(GetJsonStringFromApi(QueryTypes.Ticker));
-
+            ticker.High = Convert.ToDecimal(obj["ticker"]["high"].ToString());
+            ticker.Low = Convert.ToDecimal(obj["ticker"]["low"].ToString());
+            ticker.Last = Convert.ToDecimal(obj["ticker"]["last"].ToString());
+            ticker.Buy = Convert.ToDecimal(obj["ticker"]["buy"].ToString());
+            ticker.Sell = Convert.ToDecimal(obj["ticker"]["sell"].ToString());
+            ticker.Date = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Unspecified).AddSeconds(Convert.ToInt64(obj["ticker"]["date"].ToString())).ToLocalTime();
+            
             return ticker;
+        }
+
+        public static OrderBook GetOrderBook() {
+            OrderBook ob = new OrderBook();
+
+            JObject obj = JObject.Parse(GetJsonStringFromApi(QueryTypes.OrderBook));
+            
+            foreach (JToken token in obj["asks"]) {
+                ob.Asks.Add(new PriceVolPair(Convert.ToDecimal(token[0]), Convert.ToDecimal(token[1])));
+            }
+
+            foreach (JToken token in obj["bids"]) {
+                ob.Bids.Add(new PriceVolPair(Convert.ToDecimal(token[0]), Convert.ToDecimal(token[1])));
+            }
+
+            return ob;
+        }
+
+        public static List<Trade> GetTrades() {
+            List<Trade> trades = new List<Trade>();
+
+            JArray array = JArray.Parse(GetJsonStringFromApi(QueryTypes.Trades));
+
+            foreach (JToken token in array) {
+                Trade trade = new Trade();
+                trade.Id = Convert.ToInt32(token["tid"].ToString());
+                trade.Date = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Unspecified).AddSeconds(Convert.ToInt64(token["date"].ToString())).ToLocalTime();
+                trade.Price = Convert.ToDecimal(token["price"].ToString());
+                trade.Amount = decimal.Parse(token["amount"].ToString(), System.Globalization.NumberStyles.Float);
+                trades.Add(trade);
+            }
+
+            return trades;
         }
 
         #endregion
@@ -65,12 +104,16 @@ namespace MercadoBitcoinClient.API.Controllers {
                         url = "https://www.mercadobitcoin.com.br/api/orderbook/";
                         break;
                     case QueryTypes.Trades:
-                        url = "https://www.mercadobitcoin.com.br/api/trades/{timestamp_min}/{timestamp_max}";
+                        // url = "https://www.mercadobitcoin.com.br/api/trades/{timestamp_min}/{timestamp_max}";
+                        url = "https://www.mercadobitcoin.com.br/api/trades/1386295211";
                         break;
                 }
 
                 result = wc.DownloadString(url);
             }
+
+            _lastApiGet[type] = DateTime.Now;
+            _lastApiGetResult[type] = result;
 
             return result;
         }
