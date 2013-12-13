@@ -13,9 +13,17 @@ namespace MercadoBitcoinClient {
         /// </summary>
         [STAThread]
         static void Main() {
+
+            List<Trade> trades = Query.GetTrades();
+            using (MercadoBitcoinLocalDBTableAdapters.TradeTableAdapter ta = new MercadoBitcoinLocalDBTableAdapters.TradeTableAdapter()) {
+                foreach (Trade trade in trades) {
+                    ta.Insert(trade.Id, trade.Date, trade.Price, trade.Amount, trade.Type);
+                }
+            }
+
             //Ticker ticker = Query.GetTicker();
             //OrderBook ob = Query.GetOrderBook();
-            List<Trade> trades = Query.GetTrades();
+            //List<Trade> trades = Query.GetTrades();
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);

@@ -39,7 +39,7 @@ namespace MercadoBitcoinClient.API.Controllers {
             ticker.Last = Convert.ToDecimal(obj["ticker"]["last"].ToString());
             ticker.Buy = Convert.ToDecimal(obj["ticker"]["buy"].ToString());
             ticker.Sell = Convert.ToDecimal(obj["ticker"]["sell"].ToString());
-            ticker.Date = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Unspecified).AddSeconds(Convert.ToInt64(obj["ticker"]["date"].ToString())).ToLocalTime();
+            ticker.Date = FromUnixTimestamp(Convert.ToInt64(obj["ticker"]["date"].ToString()));
             
             return ticker;
         }
@@ -68,9 +68,10 @@ namespace MercadoBitcoinClient.API.Controllers {
             foreach (JToken token in array) {
                 Trade trade = new Trade();
                 trade.Id = Convert.ToInt32(token["tid"].ToString());
-                trade.Date = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Unspecified).AddSeconds(Convert.ToInt64(token["date"].ToString())).ToLocalTime();
+                trade.Date = FromUnixTimestamp(Convert.ToInt64(token["date"].ToString()));
                 trade.Price = Convert.ToDecimal(token["price"].ToString());
                 trade.Amount = decimal.Parse(token["amount"].ToString(), System.Globalization.NumberStyles.Float);
+                trade.Type = token["type"].ToString();
                 trades.Add(trade);
             }
 
@@ -105,7 +106,8 @@ namespace MercadoBitcoinClient.API.Controllers {
                         break;
                     case QueryTypes.Trades:
                         // url = "https://www.mercadobitcoin.com.br/api/trades/{timestamp_min}/{timestamp_max}";
-                        url = "https://www.mercadobitcoin.com.br/api/trades/1386295211";
+                        // url = "https://www.mercadobitcoin.com.br/api/trades/1386295211";
+                        url = "https://www.mercadobitcoin.com.br/api/trades/";
                         break;
                 }
 
@@ -116,6 +118,14 @@ namespace MercadoBitcoinClient.API.Controllers {
             _lastApiGetResult[type] = result;
 
             return result;
+        }
+
+        private static DateTime FromUnixTimestamp(long timestamp) {
+            return new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Unspecified).AddSeconds(timestamp).ToLocalTime();
+        }
+
+        private static long ToUnixTimestamp(DateTime date) {
+            return date.ToUniversalTime().Subtract(new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Unspecified)).Ticks / 10000000;
         }
 
         #endregion
